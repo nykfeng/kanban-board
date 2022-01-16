@@ -22,6 +22,9 @@ let storageItems;
 
 // Items
 let updatedOnLoad = false;
+let draggedItem;
+let currentColumn;
+let itemOriginalColumn;
 
 // Button element monitor
 const addBtns = document.querySelectorAll(".add-item");
@@ -37,7 +40,7 @@ function getSavedColumnsFromLocalStorage() {
     onHoldListArray = storageItems.onHold;
   } else {
     backlogListArray = [
-      { title: "Release the course", body: "Sit back and relax" },
+      { title: "Image and file uploader", body: "This one will be useful" },
       { title: "Make dark mode", body: "Watch tutorial on how to do it" },
     ];
     progressListArray = [
@@ -62,7 +65,10 @@ function getSavedColumnsFromLocalStorage() {
       },
     ];
     onHoldListArray = [
-      { title: "Being uncool", body: "being here is so not cool man" },
+      {
+        title: "Full stock information web app",
+        body: "Gonna need React and much more, will build later",
+      },
     ];
     storageItems = {
       backlog: backlogListArray,
@@ -97,6 +103,12 @@ function createAndRenderItem(column, kanbanItem) {
   kanbanItemEl.classList = "kanban-item";
   kanbanItemEl.setAttribute("draggable", "true");
 
+  kanbanItemEl.addEventListener("dragstart", drag);
+  itemListEl.addEventListener("drop", drop);
+  itemListEl.addEventListener("dragover", allowDrop);
+  itemListEl.addEventListener("dragenter", dragEnter);
+  itemListEl.addEventListener("dragleave", dragLeave);
+
   const kanbanItemTitleEl = document.createElement("div");
   kanbanItemTitleEl.classList = "kanban-item-title-bar";
   kanbanItemTitleEl.textContent = kanbanItem.title;
@@ -106,7 +118,23 @@ function createAndRenderItem(column, kanbanItem) {
   kanbanItemContentEl.textContent = kanbanItem.body;
   kanbanItemEl.appendChild(kanbanItemTitleEl);
   kanbanItemEl.appendChild(kanbanItemContentEl);
+  kanbanItemEl.insertAdjacentHTML("beforeend", optionButtons());
   itemListEl.appendChild(kanbanItemEl);
+}
+
+// html element for edit and delete buttons
+function optionButtons() {
+  const html = `
+    <div class="edit-delete-options">
+        <div class="edit-opt">
+            <ion-icon name="create-outline"></ion-icon>
+        </div>
+        <div class="delete-opt">
+            <ion-icon name="close-circle-outline"></ion-icon>
+        </div>
+    </div>
+    `;
+  return html;
 }
 
 // Update from localStorage
@@ -145,20 +173,27 @@ function deleteContentBtn(parent) {
   deleteBtn.textContent = "X";
   parent.append(deleteBtn);
   deleteBtn.addEventListener("click", function () {
-    parent.querySelector(".save-item").style.display = "none";
-    parent.querySelector(".new-item-content").style.display = "none";
-    parent.querySelector(".add-item").style.display = "block";
-
-    // set the text content of new item title and body to nothing
-    parent
-      .querySelector(".new-item-content")
-      .querySelector(".new-item-title").textContent = "";
-    parent
-      .querySelector(".new-item-content")
-      .querySelector(".new-item-body").textContent = "";
-
+    removeAddItemsElements(parent);
     deleteBtn.remove();
   });
+}
+
+// remove the add item elements
+function removeAddItemsElements(element) {
+  element.querySelector(".save-item").style.display = "none";
+  element.querySelector(".new-item-content").style.display = "none";
+  element.querySelector(".add-item").style.display = "block";
+
+  // set the text content of new item title and body to nothing
+  element
+    .querySelector(".new-item-content")
+    .querySelector(".new-item-title").textContent = "";
+  element
+    .querySelector(".new-item-content")
+    .querySelector(".new-item-body").textContent = "";
+
+  const removeBtn = element.querySelector(".delete-new-content-btn");
+  if (removeBtn) removeBtn.remove();
 }
 
 // save button listen and save to the column
@@ -184,10 +219,147 @@ function saveContentBtn(parent) {
 
     // if either content was filled then we allow it to save
     if (title || body) {
-      storageItems[column].push(kanbanItem);
-      console.table(storageItems[column]);
+      addKanbanItem(column, kanbanItem);
+      // storageItems[column].push(kanbanItem);
       updateSavedColumnsToLocalStorage();
       createAndRenderItem(columnListEl[column], kanbanItem);
+      removeAddItemsElements(parent);
     }
   });
+}
+
+// Update a kanban item with edit button
+const editDeleteKanbanItemEls = document.querySelectorAll(
+  ".edit-delete-options"
+);
+
+editDeleteKanbanItemEls.forEach((editDeleteKanbanItemEl) => {
+  editDeleteKanbanItemEl.addEventListener("click", function (e) {
+    const kanbanItem = e.target.closest(".kanban-item");
+    const columnEl = e.target.closest(".kanban-column");
+    const column = columnEl.getAttribute("column");
+    const oldItem = getKanbanItemTitleAndBody(kanbanItem);
+
+    if (e.target.closest(".edit-opt")) {
+      // make the element editable
+      makeKanbanItemEditable(kanbanItem);
+      // listen for out of foucs event so to save it
+      kanbanItem.addEventListener("blur", () => {
+        // Get title and body from the new element
+        const newItem = getKanbanItemTitleAndBody(kanbanItem);
+        // Update the kanban item title and body at app memory
+        updateKanbanList(column, oldItem, newItem);
+        // save the new list / change to localStorage
+        updateSavedColumnsToLocalStorage();
+        // make the element none editable after
+        makeKanbanItemNoneditable(kanbanItem);
+      });
+    }
+    if (e.target.closest(".delete-opt")) {
+      // delete from app memory
+      deleteKanbanItem(column, oldItem);
+      // delete from DOM
+      kanbanItem.remove();
+      // save the new list to localstorage
+      updateSavedColumnsToLocalStorage();
+    }
+  });
+});
+
+// Make kanban item editable
+function makeKanbanItemEditable(kanbanEl) {
+  kanbanEl.contentEditable = true;
+}
+
+// Make kanban item non-editable
+function makeKanbanItemNoneditable(kanbanEl) {
+  kanbanEl.contentEditable = false;
+}
+
+// make update to the kanban list array
+function updateKanbanList(column, oldItem, newItem) {
+  storageItems[column].forEach((item) => {
+    if (item.title === oldItem.title) {
+      item.title = newItem.title;
+      item.body = newItem.body;
+    }
+  });
+}
+
+// Get the kanban item title and body
+function getKanbanItemTitleAndBody(kanbanItemElement) {
+  const title = kanbanItemElement.querySelector(
+    ".kanban-item-title-bar"
+  ).textContent;
+  const body = kanbanItemElement.querySelector(
+    ".kanban-item-content"
+  ).textContent;
+  return { title, body };
+}
+
+// Handling dragging event
+function drag(e) {
+  draggedItem = e.target;
+  itemOriginalColumn = e.target
+    .closest(".kanban-column")
+    .getAttribute("column");
+  // set some minimum height so that when there is no element on the list
+  // it can still be dropped
+  const kanbanItemLists = document.querySelectorAll(".kanban-item-list");
+  kanbanItemLists.forEach((list) => {
+    list.style.minHeight = "10rem";
+  });
+}
+
+function dragEnter(e) {
+  e.preventDefault();
+}
+
+function dragLeave(e) {
+  e.preventDefault();
+}
+
+function allowDrop(e) {
+  // by default, dragged element is not allowed to drop
+  e.preventDefault();
+
+  const kanbanListEl = e.target.closest(".kanban-item-list");
+  kanbanListEl.appendChild(draggedItem);
+}
+
+function drop(e) {
+  // by default, dragged element is not allowed to drop
+  e.preventDefault();
+
+  // Find the origin column and delete
+  deleteKanbanItem(itemOriginalColumn, getKanbanItemTitleAndBody(draggedItem));
+
+  // Find the dropped column
+  const droppedColumn = e.target
+    .closest(".kanban-column")
+    .getAttribute("column");
+  addKanbanItem(droppedColumn, getKanbanItemTitleAndBody(draggedItem));
+  updateSavedColumnsToLocalStorage();
+
+  const kanbanItemLists = document.querySelectorAll(".kanban-item-list");
+  kanbanItemLists.forEach((list) => {
+    list.style.minHeight = "";
+  });
+}
+
+// add and delete kanban item from column after drag and drop
+function deleteKanbanItem(column, kanbanItem) {
+  let indexToRemove;
+  storageItems[column].forEach((item, index) => {
+    if (item.title === kanbanItem.title) {
+      if (item.body === kanbanItem.body) {
+        indexToRemove = index;
+      }
+    }
+  });
+  storageItems[column].splice(indexToRemove, 1);
+}
+
+function addKanbanItem(column, kanbanItem) {
+  storageItems[column].push(kanbanItem);
 }

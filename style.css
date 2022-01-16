@@ -1,6 +1,8 @@
+/* @import url("https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@100;200;300&family=Roboto:ital,wght@0,100;0,300;0,400;1,100&display=swap"); */
+
 :root {
   font-size: 62.5%;
-  font-family: "Anton", sans-serif;
+  font-family: sans-serif;
 }
 
 *,
@@ -16,7 +18,7 @@ body {
   background-image: url("./images/background.jpg");
   background-size: cover;
   background-attachment: fixed;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 main {
@@ -67,22 +69,26 @@ main {
 }
 
 .backlog .kanban-column-title,
-.backlog .kanban-item-title-bar {
+.backlog .kanban-item-title-bar,
+.backlog .kanban-item-list.drag-over {
   background-color: #ca965c;
 }
 
 .in-progress .kanban-column-title,
-.in-progress .kanban-item-title-bar {
+.in-progress .kanban-item-title-bar,
+.in-progress .kanban-item-list.drag-over {
   background-color: #35858b;
 }
 
 .complete .kanban-column-title,
-.complete .kanban-item-title-bar {
+.complete .kanban-item-title-bar,
+.complete .kanban-item-list.drag-over {
   background-color: #95cd41;
 }
 
 .on-hold .kanban-column-title,
-.on-hold .kanban-item-title-bar {
+.on-hold .kanban-item-title-bar,
+.on-hold .kanban-item-list.drag-over {
   background-color: #a3423c;
 }
 
@@ -94,18 +100,27 @@ main {
   max-height: 65vh;
 }
 
-.kanban-item-list::-webkit-scrollbar-track {
+.kanban-item-list.drag-over {
+  display: flex;
+  flex-direction: column;
+  gap: 5rem;
+}
+
+.kanban-item-list::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.3);
   margin-right: 5px;
 }
 
-.kanban-item-list::-webkit-scrollbar {
+.kanban-item-list::-webkit-scrollbar,
+body::-webkit-scrollbar {
   width: 10px;
 }
 
-.kanban-item-list::-webkit-scrollbar-thumb {
+.kanban-item-list::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
   border-radius: 10px;
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
   background-color: rgba(0, 0, 0, 0.8);
@@ -115,8 +130,11 @@ main {
 kanban items
  **********************************************************************/
 .kanban-item {
+  /* font-family: "Montserrat", sans-serif;
+  font-weight: 300; */
   margin-top: 1.5rem;
   opacity: 0.9;
+  position: relative;
 }
 
 .kanban-item-title-bar {
@@ -128,6 +146,35 @@ kanban items
   background-color: gray;
 }
 
+/******    edit and delete buttons for each kanban items   *******/
+.edit-delete-options {
+  display: none;
+  position: absolute;
+  padding: 0.7rem;
+  top: 0;
+  right: 0;
+  transition: all 750ms ease-in;
+}
+
+.edit-opt,
+.delete-opt {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.edit-opt:hover {
+  color: #d3dedc;
+}
+
+.delete-opt:hover {
+  color: #541212;
+}
+
+.kanban-item:hover .edit-delete-options {
+  display: block;
+}
+
+/******    add new item block   *******/
 .add-item-block {
   margin-top: 1.5rem;
 }
