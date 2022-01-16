@@ -1,0 +1,122 @@
+:root {
+  font-size: 62.5%;
+  font-family: "Anton", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  padding-top: 8rem;
+  background-image: url("./images/background.jpg");
+  background-size: cover;
+  background-attachment: fixed;
+  overflow-y: hidden;
+}
+
+main {
+  padding-top: 4rem;
+}
+
+#title {
+  color: #fff;
+  font-size: 5rem;
+  text-shadow: 2px 2px 5px black;
+  text-align: center;
+}
+
+.kanban-container {
+  display: flex;
+
+  color: #fff;
+  font-size: 2.5rem;
+  gap: 2rem;
+  padding: 3rem;
+  justify-content: space-around;
+}
+
+.kanban-column {
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  overflow-x: hidden;
+  flex: 1;
+  max-width: 50rem;
+}
+
+.kanban-column-title {
+  padding: 1rem;
+  text-align: center;
+  font-size: 4rem;
+  border: 1px solid transparent;
+  background-color: gray;
+  border-radius: 10px;
+  text-shadow: 2px 2px 5px black;
+  letter-spacing: 0.3rem;
+}
+
+.backlog .kanban-column-title,
+.backlog .kanban-item-title-bar {
+  background-color: #ca965c;
+}
+
+.in-progress .kanban-column-title,
+.in-progress .kanban-item-title-bar {
+  background-color: #35858b;
+}
+
+.complete .kanban-column-title,
+.complete .kanban-item-title-bar {
+  background-color: #95cd41;
+}
+
+.on-hold .kanban-column-title,
+.on-hold .kanban-item-title-bar {
+  background-color: #a3423c;
+}
+
+/**********************************************************************
+ list of kanban items and custom scroll bar  
+ **********************************************************************/
+.kanban-item-list {
+  overflow-y: auto;
+  max-height: 65vh;
+}
+
+.kanban-item-list::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+  margin-right: 5px;
+}
+
+.kanban-item-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.kanban-item-list::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/**********************************************************************
+kanban items
+ **********************************************************************/
+.kanban-item {
+  margin-top: 1.5rem;
+}
+
+.kanban-item-title-bar {
+  padding: 0.5rem;
+}
+
+.kanban-item-content {
+  padding: 0.5rem;
+  background-color: gray;
+}
