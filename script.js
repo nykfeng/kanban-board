@@ -103,11 +103,12 @@ function createAndRenderItem(column, kanbanItem) {
   kanbanItemEl.classList = "kanban-item";
   kanbanItemEl.setAttribute("draggable", "true");
 
-  kanbanItemEl.addEventListener("dragstart", drag);
-  itemListEl.addEventListener("drop", drop);
-  itemListEl.addEventListener("dragover", allowDrop);
-  itemListEl.addEventListener("dragenter", dragEnter);
-  itemListEl.addEventListener("dragleave", dragLeave);
+  kanbanItemEl.addEventListener("dragstart", dragStart);
+  kanbanItemEl.addEventListener("dragend", dragEnd);
+  // itemListEl.addEventListener("drop", drop);
+  // itemListEl.addEventListener("dragover", allowDrop);
+  // itemListEl.addEventListener("dragenter", dragEnter);
+  // itemListEl.addEventListener("dragleave", dragLeave);
 
   const kanbanItemTitleEl = document.createElement("div");
   kanbanItemTitleEl.classList = "kanban-item-title-bar";
@@ -149,10 +150,16 @@ function renderAndDisplayFromStorage() {
   }
 }
 
-//on load
-updateDOM();
-updateSavedColumnsToLocalStorage();
-renderAndDisplayFromStorage();
+// Listen for drop zones
+function kanbanListDropZone() {
+  const kanbanListEls = document.querySelectorAll(".kanban-item-list");
+  kanbanListEls.forEach((listEl) => {
+    listEl.addEventListener("drop", drop);
+    listEl.addEventListener("dragover", allowDrop);
+    listEl.addEventListener("dragenter", dragEnter);
+    listEl.addEventListener("dragleave", dragLeave);
+  });
+}
 
 // Only one button to listen on load
 // Add button
@@ -220,51 +227,53 @@ function saveContentBtn(parent) {
     // if either content was filled then we allow it to save
     if (title || body) {
       addKanbanItem(column, kanbanItem);
-      // storageItems[column].push(kanbanItem);
       updateSavedColumnsToLocalStorage();
       createAndRenderItem(columnListEl[column], kanbanItem);
       removeAddItemsElements(parent);
+      editAndDeleteKanbanItem();
     }
   });
 }
 
 // Update a kanban item with edit button
-const editDeleteKanbanItemEls = document.querySelectorAll(
-  ".edit-delete-options"
-);
+function editAndDeleteKanbanItem() {
+  const editDeleteKanbanItemEls = document.querySelectorAll(
+    ".edit-delete-options"
+  );
 
-editDeleteKanbanItemEls.forEach((editDeleteKanbanItemEl) => {
-  editDeleteKanbanItemEl.addEventListener("click", function (e) {
-    const kanbanItem = e.target.closest(".kanban-item");
-    const columnEl = e.target.closest(".kanban-column");
-    const column = columnEl.getAttribute("column");
-    const oldItem = getKanbanItemTitleAndBody(kanbanItem);
+  editDeleteKanbanItemEls.forEach((editDeleteKanbanItemEl) => {
+    editDeleteKanbanItemEl.addEventListener("click", function (e) {
+      const kanbanItem = e.target.closest(".kanban-item");
+      const columnEl = e.target.closest(".kanban-column");
+      const column = columnEl.getAttribute("column");
+      const oldItem = getKanbanItemTitleAndBody(kanbanItem);
 
-    if (e.target.closest(".edit-opt")) {
-      // make the element editable
-      makeKanbanItemEditable(kanbanItem);
-      // listen for out of foucs event so to save it
-      kanbanItem.addEventListener("blur", () => {
-        // Get title and body from the new element
-        const newItem = getKanbanItemTitleAndBody(kanbanItem);
-        // Update the kanban item title and body at app memory
-        updateKanbanList(column, oldItem, newItem);
-        // save the new list / change to localStorage
+      if (e.target.closest(".edit-opt")) {
+        // make the element editable
+        makeKanbanItemEditable(kanbanItem);
+        // listen for out of foucs event so to save it
+        kanbanItem.addEventListener("blur", () => {
+          // Get title and body from the new element
+          const newItem = getKanbanItemTitleAndBody(kanbanItem);
+          // Update the kanban item title and body at app memory
+          updateKanbanList(column, oldItem, newItem);
+          // save the new list / change to localStorage
+          updateSavedColumnsToLocalStorage();
+          // make the element none editable after
+          makeKanbanItemNoneditable(kanbanItem);
+        });
+      }
+      if (e.target.closest(".delete-opt")) {
+        // delete from app memory
+        deleteKanbanItem(column, oldItem);
+        // delete from DOM
+        kanbanItem.remove();
+        // save the new list to localstorage
         updateSavedColumnsToLocalStorage();
-        // make the element none editable after
-        makeKanbanItemNoneditable(kanbanItem);
-      });
-    }
-    if (e.target.closest(".delete-opt")) {
-      // delete from app memory
-      deleteKanbanItem(column, oldItem);
-      // delete from DOM
-      kanbanItem.remove();
-      // save the new list to localstorage
-      updateSavedColumnsToLocalStorage();
-    }
+      }
+    });
   });
-});
+}
 
 // Make kanban item editable
 function makeKanbanItemEditable(kanbanEl) {
@@ -298,17 +307,37 @@ function getKanbanItemTitleAndBody(kanbanItemElement) {
 }
 
 // Handling dragging event
-function drag(e) {
+function dragStart(e) {
+  // e.preventDefault();
   draggedItem = e.target;
+
+  draggedItem.classList.add("dragging");
+
   itemOriginalColumn = e.target
     .closest(".kanban-column")
     .getAttribute("column");
+
   // set some minimum height so that when there is no element on the list
   // it can still be dropped
   const kanbanItemLists = document.querySelectorAll(".kanban-item-list");
   kanbanItemLists.forEach((list) => {
     list.style.minHeight = "10rem";
   });
+
+  // add style to dragged item
+  setTimeout(() => {
+    e.target.style.visibility = "hidden";
+  }, 0);
+
+  // adding style to the dragging state
+  e.target.classList.add("dragging");
+}
+
+// finished dragging the item
+function dragEnd(e) {
+  e.preventDefault();
+  e.target.style.visibility = "visible";
+  e.target.classList.remove("dragging");
 }
 
 function dragEnter(e) {
@@ -324,25 +353,41 @@ function allowDrop(e) {
   e.preventDefault();
 
   const kanbanListEl = e.target.closest(".kanban-item-list");
-  kanbanListEl.appendChild(draggedItem);
+
+  const afterElement = getDragAfterElement(kanbanListEl, e.clientY);
+
+  if (afterElement == null) {
+    kanbanListEl.appendChild(draggedItem);
+  } else {
+    kanbanListEl.insertBefore(draggedItem, afterElement);
+  }
+
+  kanbanListEl.classList.add("drag-over");
 }
 
 function drop(e) {
+  // if (!e.target.classList.contains("kanban-item")) return;
   // by default, dragged element is not allowed to drop
   e.preventDefault();
 
-  // Find the origin column and delete
+  // Find the origin column and delete the kanban item
   deleteKanbanItem(itemOriginalColumn, getKanbanItemTitleAndBody(draggedItem));
 
   // Find the dropped column
-  const droppedColumn = e.target
-    .closest(".kanban-column")
-    .getAttribute("column");
-  addKanbanItem(droppedColumn, getKanbanItemTitleAndBody(draggedItem));
+  const droppedColumnEl = e.target.closest(".kanban-column");
+  const droppedColumnName = droppedColumnEl.getAttribute("column");
+
+  // add the kanban item to the dropped column
+  addKanbanItem(droppedColumnName, getKanbanItemTitleAndBody(draggedItem));
+
+  // sort the kanban items before saving them to localStorage
+  const newList = sortKanbanItemsInColumn(droppedColumnEl);
+  storageItems[droppedColumnName] = newList;
   updateSavedColumnsToLocalStorage();
 
-  const kanbanItemLists = document.querySelectorAll(".kanban-item-list");
-  kanbanItemLists.forEach((list) => {
+  const kanbanListEls = document.querySelectorAll(".kanban-item-list");
+  kanbanListEls.forEach((list) => {
+    list.classList.remove("drag-over");
     list.style.minHeight = "";
   });
 }
@@ -363,3 +408,39 @@ function deleteKanbanItem(column, kanbanItem) {
 function addKanbanItem(column, kanbanItem) {
   storageItems[column].push(kanbanItem);
 }
+
+// sortable drop
+function getDragAfterElement(kanbanItemListEl, y) {
+  const draggableElements = Array.from(
+    kanbanItemListEl.querySelectorAll(".kanban-item:not(.dragging)")
+  );
+
+  return draggableElements.reduce(
+    (closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    },
+    { offset: Number.NEGATIVE_INFINITY }
+  ).element;
+}
+
+// sortable save
+function sortKanbanItemsInColumn(columnEl) {
+  const allItems = Array.from(columnEl.querySelectorAll(".kanban-item"));
+  const newKanbanColumn = allItems.map((item) => {
+    return getKanbanItemTitleAndBody(item);
+  });
+  return newKanbanColumn;
+}
+
+//on load
+updateDOM();
+updateSavedColumnsToLocalStorage();
+renderAndDisplayFromStorage();
+editAndDeleteKanbanItem();
+kanbanListDropZone();

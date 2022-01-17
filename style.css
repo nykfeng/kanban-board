@@ -69,26 +69,22 @@ main {
 }
 
 .backlog .kanban-column-title,
-.backlog .kanban-item-title-bar,
-.backlog .kanban-item-list.drag-over {
+.backlog .kanban-item-title-bar {
   background-color: #ca965c;
 }
 
 .in-progress .kanban-column-title,
-.in-progress .kanban-item-title-bar,
-.in-progress .kanban-item-list.drag-over {
+.in-progress .kanban-item-title-bar {
   background-color: #35858b;
 }
 
 .complete .kanban-column-title,
-.complete .kanban-item-title-bar,
-.complete .kanban-item-list.drag-over {
+.complete .kanban-item-title-bar {
   background-color: #95cd41;
 }
 
 .on-hold .kanban-column-title,
-.on-hold .kanban-item-title-bar,
-.on-hold .kanban-item-list.drag-over {
+.on-hold .kanban-item-title-bar {
   background-color: #a3423c;
 }
 
@@ -98,9 +94,12 @@ main {
 .kanban-item-list {
   overflow-y: auto;
   max-height: 65vh;
+  transition: all 350ms ease-in-out;
+  box-shadow: 0px 15px 15px rgba(0, 0, 0, 0.3);
 }
 
 .kanban-item-list.drag-over {
+  transition: all 350ms ease-in-out;
   display: flex;
   flex-direction: column;
   gap: 5rem;
@@ -130,11 +129,12 @@ body::-webkit-scrollbar-thumb {
 kanban items
  **********************************************************************/
 .kanban-item {
-  /* font-family: "Montserrat", sans-serif;
-  font-weight: 300; */
   margin-top: 1.5rem;
   opacity: 0.9;
   position: relative;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .kanban-item-title-bar {
@@ -236,4 +236,34 @@ kanban items
   text-align: center;
   cursor: pointer;
   padding: 0.2rem;
+}
+
+/**********************************************************************
+Media Query
+ **********************************************************************/
+
+/* Laptop */
+@media screen and (max-width: 1800px) {
+  .main-title {
+    font-size: 2rem;
+  }
+}
+
+/* Large Smartphone (Vertical) */
+@media screen and (max-width: 600px) {
+  body {
+    overflow-y: auto;
+  }
+
+  .kanban-container {
+    margin: 0;
+  }
+
+  .kanban-container {
+    display: block;
+  }
+
+  .kanban-item-list {
+    margin: 10px;
+  }
 }
