@@ -41,7 +41,10 @@ function getSavedColumnsFromLocalStorage() {
   } else {
     backlogListArray = [
       { title: "Image and file uploader", body: "This one will be useful" },
-      { title: "Make dark mode", body: "Watch tutorial on how to do it" },
+      {
+        title: "Make dark mode",
+        body: "Feature that every website is doing now..",
+      },
     ];
     progressListArray = [
       {
@@ -67,7 +70,7 @@ function getSavedColumnsFromLocalStorage() {
     onHoldListArray = [
       {
         title: "Full stock information web app",
-        body: "Gonna need React and much more, will build later",
+        body: "Gonna learn more React and sass first, will build later",
       },
     ];
     storageItems = {
@@ -105,10 +108,7 @@ function createAndRenderItem(column, kanbanItem) {
 
   kanbanItemEl.addEventListener("dragstart", dragStart);
   kanbanItemEl.addEventListener("dragend", dragEnd);
-  // itemListEl.addEventListener("drop", drop);
-  // itemListEl.addEventListener("dragover", allowDrop);
-  // itemListEl.addEventListener("dragenter", dragEnter);
-  // itemListEl.addEventListener("dragleave", dragLeave);
+  // kanbanItemEl.addEventListener("drag", draggingItem);
 
   const kanbanItemTitleEl = document.createElement("div");
   kanbanItemTitleEl.classList = "kanban-item-title-bar";
@@ -338,6 +338,11 @@ function dragEnd(e) {
   e.preventDefault();
   e.target.style.visibility = "visible";
   e.target.classList.remove("dragging");
+}
+
+// drag state - change dragging state style
+function draggingItem(e) {
+  const kanbanItemEl = e.target;
 }
 
 function dragEnter(e) {
